@@ -1,5 +1,7 @@
 # Kaporetto
 
+![alt text](kaporetto.jpg)
+
 Kaporetto is a highly concurrent, microservice oriented archive stack for Lynxchan written in C#.
 
 # Getting started
