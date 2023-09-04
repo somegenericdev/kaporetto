@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kaporetto.Models", "Kaporetto.Models\Kaporetto.Models.csproj", "{32DE4D34-2F03-44BD-A5FE-E36F94E0E93D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kaporetto.Scraper", "Kaporetto.Scraper\Kaporetto.Scraper.csproj", "{949C0986-722F-424A-969B-F6A5B891F935}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kaporetto.Scheduler", "Kaporetto.Scheduler\Kaporetto.Scheduler.csproj", "{ACBD9573-8659-4D81-B467-FC5EEAA777E7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kaporetto.DbConnector", "Kaporetto.DbConnector\Kaporetto.DbConnector.csproj", "{FC8378E6-A975-4FBD-A541-F1E6298E3352}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{32DE4D34-2F03-44BD-A5FE-E36F94E0E93D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{32DE4D34-2F03-44BD-A5FE-E36F94E0E93D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{32DE4D34-2F03-44BD-A5FE-E36F94E0E93D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{32DE4D34-2F03-44BD-A5FE-E36F94E0E93D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{949C0986-722F-424A-969B-F6A5B891F935}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{949C0986-722F-424A-969B-F6A5B891F935}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{949C0986-722F-424A-969B-F6A5B891F935}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{949C0986-722F-424A-969B-F6A5B891F935}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ACBD9573-8659-4D81-B467-FC5EEAA777E7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ACBD9573-8659-4D81-B467-FC5EEAA777E7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ACBD9573-8659-4D81-B467-FC5EEAA777E7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ACBD9573-8659-4D81-B467-FC5EEAA777E7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FC8378E6-A975-4FBD-A541-F1E6298E3352}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FC8378E6-A975-4FBD-A541-F1E6298E3352}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FC8378E6-A975-4FBD-A541-F1E6298E3352}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FC8378E6-A975-4FBD-A541-F1E6298E3352}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
