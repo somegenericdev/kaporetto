@@ -10,14 +10,15 @@ using Serilog;
 using Kaporetto.Models;
 using System.Linq;
 using System.Net;
+using Serilog.Sinks.Loki;
 using YamlDotNet.Serialization;
 using File = System.IO.File;
 
 #region SIGNAL handling, logger init and other boring stuff
 
-var logger = new LoggerConfiguration()
-    .WriteTo.Console()
-    .CreateLogger();
+
+
+
 
 bool wasSigTermReceived = false;
 
@@ -45,6 +46,14 @@ var channel = connection.CreateModel();
 string configPath = Path.Join(homeDirectory, ".kaporetto", ".kaporettorc");
 
 var yamlConfig = new Deserializer().Deserialize<YamlConfig>(File.ReadAllText(configPath));
+
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .Enrich.FromLogContext()
+    .WriteTo.LokiHttp(new NoAuthCredentials(yamlConfig.lokiUrl),new LogLabelProvider("Scraper"))
+    .WriteTo.Console()
+    .CreateLogger();
+
 Globals.MaxFileSize = yamlConfig.maxFileSize;
 Globals.BaseUrl = yamlConfig.boards.Single(x => x.alias == boardAlias).baseUrl;
 
@@ -96,7 +105,8 @@ try
 }
 catch (Exception e)
 {
-    logger.Error($"[{DateTime.Now.ToString()}] {e.Message} {e.Source} {e.TargetSite} {e.StackTrace}");
+
+    Log.Logger.Error($"[{DateTime.Now.ToString()}] {e.Message} {e.Source} {e.TargetSite} {e.StackTrace}");
 }
 
 
@@ -105,7 +115,7 @@ void RabbitMqPush(Post p)
     try
     {
         var json = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(p));
-        logger.Information(
+        Log.Logger.Information(
             $"[{DateTime.Now.ToString()}] [{boardAlias}] Pushing post no. {p.postId} in thread no. {p.parentId} to the queue. Approx. size: {json.Length / 1000 / 1000}MB");
         
         IBasicProperties basicProperties = channel.CreateBasicProperties();
@@ -117,8 +127,8 @@ void RabbitMqPush(Post p)
     }
     catch (Exception e)
     {
-        logger.Error(
-            $"[{DateTime.Now.ToString()}] [{boardAlias}] Error while pushing post no. {p.postId} in thread no. {p.parentId} to the queue.\n${e.Message}");
+        Log.Logger.Error(
+            $"[{boardAlias}] Error while pushing post no. {p.postId} in thread no. {p.parentId} to the queue.\n${e.Message}");
         channel.Dispose();
         channel = connection.CreateModel();
     }

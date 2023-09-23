@@ -11,6 +11,8 @@
       <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
       <PackageReference Include="Polly" Version="7.2.4" />
       <PackageReference Include="Polly.Extensions.Http" Version="3.0.0" />
+      <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
+      <PackageReference Include="Serilog.Sinks.Loki" Version="3.0.1-beta1" />
       <PackageReference Include="YamlDotNet" Version="13.2.0" />
     </ItemGroup>
 

@@ -9,6 +9,7 @@ public class YamlConfig
     public string scraperPath { get; set; }
     public string queueName { get; set; }
     public string postgreConnectionString { get; set; }
+    public string lokiUrl { get; set; }
     public List<Board> boards { get; set; }
 }
 

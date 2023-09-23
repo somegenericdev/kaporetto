@@ -6,19 +6,18 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using Serilog;
 
 namespace Kaporetto.DbConnector;
 
 public class Worker : BackgroundService
 {
-    private readonly ILogger<Worker> _logger;
     private readonly KaporettoContext DbContext;
     private IConnection _connection;
     private IModel _channel;
 
-    public Worker(ILogger<Worker> logger, KaporettoContext dbContext)
+    public Worker(KaporettoContext dbContext)
     {
-        _logger = logger;
         DbContext = dbContext;
         InitRabbitMQ();
     }
@@ -68,14 +67,13 @@ public class Worker : BackgroundService
                     DbContext.SaveChanges();
                     // handle the received message  
                     _channel.BasicAck(ea.DeliveryTag, false);
-                    _logger.LogInformation($"[{DateTime.Now.ToString()}] Saved and acked post no. {post.postId}");
+                    Log.Logger.Information($"[{DateTime.Now.ToString()}] Saved and acked post no. {post.postId}");
                     DbContext.ChangeTracker.Clear();
             }
             catch(Exception e)
             {
-                _logger.LogError($"[{DateTime.Now.ToString()}] {e.Message} {e.Source} {e.TargetSite} {e.StackTrace}");
+                Log.Logger.Error(e.ToString());
                 _channel.BasicNack(ea.DeliveryTag, false,false);
-                //TODO send to dead letter exchange
                 DbContext.ChangeTracker.Clear();
 
             }
