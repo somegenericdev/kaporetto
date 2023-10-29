@@ -50,12 +50,12 @@ var yamlConfig = new Deserializer().Deserialize<YamlConfig>(File.ReadAllText(con
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
     .Enrich.FromLogContext()
-    .WriteTo.LokiHttp(new NoAuthCredentials(yamlConfig.lokiUrl),new LogLabelProvider("Scraper"))
+    .WriteTo.LokiHttp(new NoAuthCredentials(yamlConfig.LokiUrl),new LogLabelProvider("Scraper"))
     .WriteTo.Console()
     .CreateLogger();
 
-Globals.MaxFileSize = yamlConfig.maxFileSize;
-Globals.BaseUrl = yamlConfig.boards.Single(x => x.alias == boardAlias).baseUrl;
+Globals.MaxFileSize = yamlConfig.MaxFileSize;
+Globals.BaseUrl = yamlConfig.Boards.Single(x => x.Alias == boardAlias).BaseUrl;
 
 long lastPostNo = File.Exists(lastFetchedPath) ? long.Parse(File.ReadAllText(lastFetchedPath)) : 0;
 

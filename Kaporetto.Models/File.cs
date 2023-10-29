@@ -18,9 +18,9 @@ public class File
     public long postId { get; set; }
     public string board { get; set; }
     [ForeignKey("postId,board")]
-    public Post Post { get; set; }
+    public virtual Post Post { get; set; }
     [ForeignKey("sha256")]
-    public FileContent FileContent { get; set; }
+    public virtual FileContent FileContent { get; set; }
     public string sha256 { get; set; }
     public File()
     {

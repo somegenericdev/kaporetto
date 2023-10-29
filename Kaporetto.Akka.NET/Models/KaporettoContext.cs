@@ -4,7 +4,7 @@ using Kaporetto.Models;
 using Microsoft.EntityFrameworkCore;
 using File = Kaporetto.Models.File;
 
-namespace Kaporetto.DbConnector.Models;
+namespace akka.App;
 
 public partial class KaporettoContext : DbContext
 {

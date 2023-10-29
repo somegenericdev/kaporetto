@@ -20,23 +20,23 @@ var config = new Deserializer().Deserialize<YamlConfig>(File.ReadAllText(configP
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
     .Enrich.FromLogContext()
-    .WriteTo.LokiHttp(new NoAuthCredentials(config.lokiUrl),new LogLabelProvider("Scraper"))
+    .WriteTo.LokiHttp(new NoAuthCredentials(config.LokiUrl),new LogLabelProvider("Scraper"))
     .WriteTo.Console()
     .CreateLogger();
 
 try
 {
-    Globals.scraperPath = config.scraperPath;
+    Globals.scraperPath = config.ScraperPath;
     SchedulerWorker schedulerWorker = new SchedulerWorker();
 
     while (true)
     {
 
-        var boardProcessors = config.boards.Select(b => new BoardProcessor(b)).ToImmutableList();
+        var boardProcessors = config.Boards.Select(b => new BoardProcessor(b)).ToImmutableList();
 
         var bumpedThreadsTmp = boardProcessors.Select(boardProcessor =>
         {
-            return boardProcessor.GetBumpedThreads().Select(threadNo => $"{threadNo};{boardProcessor.board.alias}")
+            return boardProcessor.GetBumpedThreads().Select(threadNo => $"{threadNo};{boardProcessor.board.Alias}")
                 .ToImmutableList();
         }).ToImmutableList();
 

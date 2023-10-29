@@ -14,6 +14,7 @@
 
     <ItemGroup>
       <PackageReference Include="Microsoft.EntityFrameworkCore.Abstractions" Version="7.0.10" />
+      <PackageReference Include="Serilog.Sinks.Console" />
       <PackageReference Include="Serilog.Sinks.Loki" Version="3.0.1-beta1" />
     </ItemGroup>
 
