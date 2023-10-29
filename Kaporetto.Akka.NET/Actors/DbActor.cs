@@ -31,7 +31,7 @@ public class DbActor : ReceiveActor
         Receive<Post>(post =>
         {
             var act = (Post x) => OnReceiveMessage(x);
-            (act, post, Logger).Try();
+            (act, post, Logger).TryOrLog();
         });
     }
 
