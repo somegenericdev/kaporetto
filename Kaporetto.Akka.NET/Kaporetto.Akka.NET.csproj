@@ -5,7 +5,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RootNamespace>akka.App</RootNamespace>
+    <RootNamespace>Kaporetto.Akka.NET</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

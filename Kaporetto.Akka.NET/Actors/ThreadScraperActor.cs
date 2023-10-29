@@ -9,10 +9,11 @@ using Newtonsoft.Json;
 using Polly;
 using Polly.Extensions.Http;
 using Serilog;
+using Serilog.Core;
 using Serilog.Sinks.Loki;
 using File = Kaporetto.Models.File;
 
-namespace akka.App;
+namespace Kaporetto.Akka.NET;
 
 public class ThreadScraperActor : ReceiveActor
 {
@@ -21,80 +22,79 @@ public class ThreadScraperActor : ReceiveActor
     private YamlConfig YamlConfig;
     private string ThreadNo;
     private string BoardAlias;
+    private ILogger Logger;
+    private IRequiredActor<DbActor> DbActor;
 
-    public ThreadScraperActor(IRequiredActor<DbActor> helloActor, YamlConfig yamlConfig)
+    public ThreadScraperActor(IRequiredActor<DbActor> dbActor, YamlConfig yamlConfig, ILogger logger)
     {
         YamlConfig = yamlConfig;
+        Logger = logger;
+        DbActor = dbActor;
 
         Receive<string>(message =>
         {
-            ThreadNo = message.Split(";")[0];
-            BoardAlias = message.Split(";")[1];
-
-            Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Information()
-                .Enrich.FromLogContext()
-                .WriteTo.LokiHttp(new NoAuthCredentials(yamlConfig.LokiUrl), new LogLabelProvider("Scraper"))
-                .WriteTo.Console()
-                .CreateLogger();
-
-            var baseUrl = GetBaseUrl(BoardAlias);
-            var lastFetchedPath = GetLastFetchedPath(ThreadNo, BoardAlias);
-
-            long lastPostNo = System.IO.File.Exists(lastFetchedPath) ? long.Parse(System.IO.File.ReadAllText(lastFetchedPath)) : 0;
-
-
-            var threadUrl = new Uri(baseUrl).Combine($"{ThreadNo}.json").ToString();
-            var result = GetRequest(threadUrl);
-            if (result.statusCode == HttpStatusCode.NotFound)
-            {
-                return;
-            }
-
-            var postContainer = JsonConvert.DeserializeObject<PostContainer>(result.response);
-            var thread = new Post(postContainer); //push the thread first
-
-
-            if (lastPostNo == 0)
-            {
-                var normalized= NormalizePost(thread, null, BoardAlias);
-                helloActor.ActorRef.Tell(normalized);
-            }
-
-
-            try
-            {
-                ImmutableList<Post> posts = postContainer.Posts;
-
-                if (posts.Count > 0 && posts.Last()?.postId > lastPostNo)
-                {
-                    List<Post> postsToBePushed = posts.Where(p => p.postId > lastPostNo).ToList();
-
-                    postsToBePushed.ForEach(p =>
-                    {
-                        var normalized= NormalizePost(p, long.Parse(ThreadNo), BoardAlias);
-                        helloActor.ActorRef.Tell(normalized);
-                    });
-                }
-
-                lastPostNo = posts.LastOrDefault()?.postId ?? thread.postId;
-
-                if (!System.IO.File.Exists(lastFetchedPath))
-                {
-                    Directory.CreateDirectory(Path.GetDirectoryName(lastFetchedPath));
-                }
-
-                System.IO.File.WriteAllText(lastFetchedPath, lastPostNo.ToString());
-
-
-         
-            }
-            catch (Exception e)
-            {
-                Log.Logger.Error($"[{DateTime.Now.ToString()}] {e.Message} {e.Source} {e.TargetSite} {e.StackTrace}");
-            }
+            var act = (string x) => OnReceiveMessage(x);
+            (act, message, Logger).TryOrLog();
         });
     }
+
+    public void OnReceiveMessage(string message)
+    {
+        ThreadNo = message.Split(";")[0];
+        BoardAlias = message.Split(";")[1];
+        
+        Logger.Information($"Scraping thread no. {ThreadNo} on board {BoardAlias}");
+
+        var baseUrl = GetBaseUrl(BoardAlias);
+        var lastFetchedPath = GetLastFetchedPath(ThreadNo, BoardAlias);
+        Logger.Information(lastFetchedPath);
+        
+        long lastPostNo = System.IO.File.Exists(lastFetchedPath)
+            ? long.Parse(System.IO.File.ReadAllText(lastFetchedPath))
+            : 0;
+
+
+        var threadUrl = new Uri(baseUrl).Combine($"{ThreadNo}.json").ToString();
+        var result = GetRequest(threadUrl);
+        if (result.statusCode == HttpStatusCode.NotFound)
+        {
+            return;
+        }
+
+        var postContainer = JsonConvert.DeserializeObject<PostContainer>(result.response);
+        var thread = new Post(postContainer); //push the thread first
+
+
+        if (lastPostNo == 0)
+        {
+            var normalized = NormalizePost(thread, null, BoardAlias);
+            DbActor.ActorRef.Tell(normalized);
+        }
+
+
+        ImmutableList<Post> posts = postContainer.Posts;
+
+        if (posts.Count > 0 && posts.Last()?.postId > lastPostNo)
+        {
+            List<Post> postsToBePushed = posts.Where(p => p.postId > lastPostNo).ToList();
+
+            postsToBePushed.ForEach(p =>
+            {
+                var normalized = NormalizePost(p, long.Parse(ThreadNo), BoardAlias);
+                DbActor.ActorRef.Tell(normalized);
+            });
+        }
+        Logger.Information("Out of Foreach");
+        lastPostNo = posts.LastOrDefault()?.postId ?? thread.postId;
+
+        if (!System.IO.File.Exists(lastFetchedPath))
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(lastFetchedPath));
+        }
+        Logger.Information("Before writealltext");
+        System.IO.File.WriteAllText(lastFetchedPath, lastPostNo.ToString());
+    }
+
 
     public string GetBaseUrl(string boardAlias)
     {
@@ -106,32 +106,37 @@ public class ThreadScraperActor : ReceiveActor
         string homeDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         return Path.Join(homeDirectory, ".kaporetto", $"{threadNo}-{boardAlias}.tmp");
     }
-    
-    
+
+
     public Post NormalizePost(Post post, long? parentId, string boardAlias)
     {
         var newFiles = post.files.Select(f => NormalizeFile(f, YamlConfig.MaxFileSize)).ToImmutableList();
 
         return new Post(post.name, post.signedRole, post.email, post.flag, post.flagName, post.id, post.subject,
-            post.flagCode, post.markdown, post.message, post.postId, post.creation, newFiles, post.isThread, parentId,boardAlias);
+            post.flagCode, post.markdown, post.message, post.postId, post.creation, newFiles, post.isThread, parentId,
+            boardAlias);
     }
-    
-    public  File NormalizeFile(File file, int maxFileSize)
+
+    public File NormalizeFile(File file, int maxFileSize)
     {
-        var path_headers = HeadRequest(new Uri(YamlConfig.GetBoard(BoardAlias).ImgBaseUrl).Combine(file.path).ToString(), 1000).response.Content.Headers;
+        var path_headers =
+            HeadRequest(new Uri(YamlConfig.GetBoard(BoardAlias).ImgBaseUrl).Combine(file.path).ToString(), 1000)
+                .response.Content.Headers;
         var size = long.Parse(path_headers.GetValues("Content-Length").FirstOrDefault());
 
-        byte[] thumb=new byte[]{};
-        byte[] content=new byte[]{};
+        byte[] thumb = new byte[] { };
+        byte[] content = new byte[] { };
 
         if (size < maxFileSize * 1000 * 1000) //5MB
         {
-            content = GetRequestBytes(new Uri(YamlConfig.GetBoard(BoardAlias).ImgBaseUrl).Combine(file.path).ToString(), 1000).response;
+            content = GetRequestBytes(new Uri(YamlConfig.GetBoard(BoardAlias).ImgBaseUrl).Combine(file.path).ToString(),
+                1000).response;
         }
 
-        thumb = GetRequestBytes(new Uri(YamlConfig.GetBoard(BoardAlias).ImgBaseUrl).Combine(file.thumb).ToString()).response;
+        thumb = GetRequestBytes(new Uri(YamlConfig.GetBoard(BoardAlias).ImgBaseUrl).Combine(file.thumb).ToString())
+            .response;
 
-        var fileContent=new FileContent(content, thumb, ComputeSha256Hash(content));
+        var fileContent = new FileContent(content, thumb, ComputeSha256Hash(content));
 
         return new File(file.size, file.width, file.height, file.mime, file.thumb, file.path, fileContent);
     }
@@ -154,7 +159,7 @@ public class ThreadScraperActor : ReceiveActor
         using var reader = new StreamReader(response.Content.ReadAsStream());
         return (reader.ReadToEnd(), response.StatusCode);
     }
-    
+
     public static (byte[] response, HttpStatusCode statusCode) GetRequestBytes(string url, int secondsTimeout = 100)
     {
         var policy = HttpPolicyExtensions
@@ -169,10 +174,10 @@ public class ThreadScraperActor : ReceiveActor
             return response;
         });
 
-       
+
         MemoryStream ms = new MemoryStream();
         response.Content.ReadAsStream().CopyTo(ms);
-        return (ms.ToArray(),response.StatusCode);
+        return (ms.ToArray(), response.StatusCode);
     }
 
 
@@ -192,7 +197,7 @@ public class ThreadScraperActor : ReceiveActor
         });
         return (response, response.StatusCode);
     }
-    
+
     public static string ComputeSha256Hash(byte[] data)
     {
         // Create a SHA256
@@ -207,9 +212,8 @@ public class ThreadScraperActor : ReceiveActor
             {
                 builder.Append(bytes[i].ToString("x2"));
             }
+
             return builder.ToString();
         }
     }
-
-    
 }
