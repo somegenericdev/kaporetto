@@ -1,4 +1,5 @@
-﻿using Akka.Hosting;
+﻿using Akka.DependencyInjection;
+using Akka.Hosting;
 using Kaporetto.Akka.NET;
 using Kaporetto.Models;
 using Microsoft.EntityFrameworkCore;
@@ -31,16 +32,16 @@ hostBuilder.ConfigureServices((context, services) =>
         builder
             .WithActors((system, registry, resolver) =>
             {
-                var helloActorProps = resolver.Props<ThreadScraperActor>();
-                var helloActor = system.ActorOf(helloActorProps, "hello-actor");
-                registry.Register<ThreadScraperActor>(helloActor);
+                var threadScraperProps = resolver.Props<ThreadScraperActor>();
+                var threadScraperActor = system.ActorOf(threadScraperProps, "thread-scraper-actor");
+                registry.Register<ThreadScraperActor>(threadScraperActor);
             })
             .WithActors((system, registry, resolver) =>
             {
-                var timerActorProps =
+                var schedulerActorProps =
                     resolver.Props<SchedulerActor>(); // uses Msft.Ext.DI to inject reference to helloActor
-                var timerActor = system.ActorOf(timerActorProps, "timer-actor");
-                registry.Register<SchedulerActor>(timerActor);
+                var schedulerActor = system.ActorOf(schedulerActorProps, "scheduler-actor");
+                registry.Register<SchedulerActor>(schedulerActor);
             })
             .WithActors((system, registry, resolver) =>
             {

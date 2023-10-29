@@ -36,10 +36,15 @@ public class ThreadScraperActor : ReceiveActor
             var act = (string x) => OnReceiveMessage(x);
             (act, message, Logger).TryOrLog();
         });
+        
+        Receive<CurrentThreadNoMessage>((message)=> Sender.Tell(ThreadNo)); //not used
     }
 
     public void OnReceiveMessage(string message)
     {
+        
+        
+        
         ThreadNo = message.Split(";")[0];
         BoardAlias = message.Split(";")[1];
         
@@ -58,7 +63,7 @@ public class ThreadScraperActor : ReceiveActor
         var result = GetRequest(threadUrl);
         if (result.statusCode == HttpStatusCode.NotFound)
         {
-            return;
+            Context.Stop(Self);
         }
 
         var postContainer = JsonConvert.DeserializeObject<PostContainer>(result.response);
@@ -93,6 +98,7 @@ public class ThreadScraperActor : ReceiveActor
         }
         Logger.Information("Before writealltext");
         System.IO.File.WriteAllText(lastFetchedPath, lastPostNo.ToString());
+        Context.Stop(Self);
     }
 
 
