@@ -33,7 +33,7 @@ public class BoardProcessor
     public ImmutableList<long> GetBumpedThreads()
     {
         var oldThreads = File.Exists(LastFetchedPath)
-            ? JsonConvert.DeserializeObject<ImmutableList<CatalogThread>>(File.ReadAllText(LastFetchedPath))
+            ? Adapt(File.ReadAllText(LastFetchedPath))
             : new List<CatalogThread>().ToImmutableList();
 
         Json = GetRequest(CatalogUrl);
