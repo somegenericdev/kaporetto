@@ -1,6 +1,9 @@
 using System.Collections.Immutable;
 using Kaporetto.Models;
+using Kaporetto.Models.Adapters;
+using Kaporetto.Models.Vichan;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Polly;
 using Polly.Extensions.Http;
 using Scheduler;
@@ -10,41 +13,69 @@ namespace Kaporetto.Scheduler;
 
 public class BoardProcessor
 {
-    public Board board;
+    public Board Board;
 
-    private string catalogUrl
+    private string CatalogUrl
     {
-        get => new Uri(board.BaseUrl).Combine("catalog.json").ToString();
+        get => new Uri(Board.BaseUrl).Combine("catalog.json").ToString();
     }
 
-    private string lastFetchedPath
+    private string LastFetchedPath
     {
-        get => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".kaporetto", $"lastFetched-{board.Alias}.tmp");
+        get => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".kaporetto",
+            $"lastFetched-{Board.Alias}.tmp");
     }
 
-    private string json;
+
+    private string Json;
 
     //TODO cambia nome?
     public ImmutableList<long> GetBumpedThreads()
     {
-        var oldThreads = File.Exists(lastFetchedPath)
-            ? JsonConvert.DeserializeObject<ImmutableList<CatalogThread>>(File.ReadAllText(lastFetchedPath))
+        var oldThreads = File.Exists(LastFetchedPath)
+            ? JsonConvert.DeserializeObject<ImmutableList<CatalogThread>>(File.ReadAllText(LastFetchedPath))
             : new List<CatalogThread>().ToImmutableList();
 
-        json = GetRequest(catalogUrl);
-        var newThreads = JsonConvert.DeserializeObject<ImmutableList<CatalogThread>>(this.json);
+        Json = GetRequest(CatalogUrl);
+
+
+        var newThreads = Adapt(Json);
         var diffThreads = diff(oldThreads, newThreads);
         return diffThreads;
     }
 
+
+    private ImmutableList<CatalogThread> Adapt(string json)
+    {
+        switch (Board.ImageboardEngine)
+        {
+            case ImageboardEngine.Lynxchan:
+            {
+                var adapter = new NullAdapter();
+                var catalogThread = JsonConvert.DeserializeObject<ImmutableList<CatalogThread>>(json);
+                return catalogThread.Select(x => adapter.AdaptCatalogThread(x)).ToImmutableList();
+            }
+            case ImageboardEngine.Vichan:
+            {
+                var adapter = new VichanAdapter();
+                var flattenedJson = JsonConvert.SerializeObject(JsonConvert.DeserializeObject<ImmutableList<JObject>>(json).SelectMany(x => x["threads"]));
+                var vichanCatalogThread = JsonConvert.DeserializeObject<ImmutableList<VichanCatalogThread>>(flattenedJson);
+                return vichanCatalogThread.Select(x => adapter.AdaptCatalogThread(x)).ToImmutableList();
+            }
+            default:
+                throw new Exception("Engine not handled.");
+        }
+    }
+
+
     public void SaveLastFetched()
     {
-        if (!File.Exists(lastFetchedPath))
+        if (!File.Exists(LastFetchedPath))
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(lastFetchedPath));
+            Directory.CreateDirectory(Path.GetDirectoryName(LastFetchedPath));
         }
 
-        File.WriteAllText(lastFetchedPath, json);
+        File.WriteAllText(LastFetchedPath, Json);
     }
 
     private string GetRequest(string url)
@@ -86,6 +117,6 @@ public class BoardProcessor
 
     public BoardProcessor(Board _board)
     {
-        board = _board;
+        Board = _board;
     }
 }

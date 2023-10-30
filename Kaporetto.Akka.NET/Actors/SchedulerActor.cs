@@ -49,7 +49,7 @@ public class SchedulerActor : ReceiveActor, IWithTimers
 
         var bumpedThreadsTmp = boardProcessors.Select(boardProcessor =>
         {
-            return boardProcessor.GetBumpedThreads().Select(threadNo => $"{threadNo};{boardProcessor.board.Alias}")
+            return boardProcessor.GetBumpedThreads().Select(threadNo => $"{threadNo};{boardProcessor.Board.Alias}")
                 .ToImmutableList();
         }).ToImmutableList();
 

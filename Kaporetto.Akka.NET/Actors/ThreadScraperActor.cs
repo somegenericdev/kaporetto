@@ -4,6 +4,8 @@ using System.Security.Cryptography;
 using System.Text;
 using Akka.Hosting;
 using Kaporetto.Models;
+using Kaporetto.Models.Adapters;
+using Kaporetto.Models.Vichan;
 using Microsoft.VisualBasic.CompilerServices;
 using Newtonsoft.Json;
 using Polly;
@@ -66,7 +68,7 @@ public class ThreadScraperActor : ReceiveActor
             Context.Stop(Self);
         }
 
-        var postContainer = JsonConvert.DeserializeObject<PostContainer>(result.response);
+        var postContainer = GetPostContainer(result.response);
         var thread = new Post(postContainer); //push the thread first
 
 
@@ -101,6 +103,29 @@ public class ThreadScraperActor : ReceiveActor
         Context.Stop(Self);
     }
 
+
+    public PostContainer GetPostContainer(string json)
+    {
+        switch (YamlConfig.GetBoard(BoardAlias).ImageboardEngine)
+        {
+            case ImageboardEngine.Lynxchan:
+            {
+                var adapter = new NullAdapter();
+                var postContainer = JsonConvert.DeserializeObject<PostContainer>(json);
+                return adapter.AdaptPostContainer(postContainer);
+            }
+            case ImageboardEngine.Vichan:
+            {
+                var adapter = new VichanAdapter();
+                var postContainer = JsonConvert.DeserializeObject<VichanPostContainer>(json);
+                return adapter.AdaptPostContainer(postContainer);
+            }
+            default:
+                throw new Exception("Engine not handled.");
+        }
+
+        
+    }
 
     public string GetBaseUrl(string boardAlias)
     {

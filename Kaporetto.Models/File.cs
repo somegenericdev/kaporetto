@@ -12,7 +12,7 @@ public class File
     public int size { get; set; }
     public int? width { get; set; }
     public int? height { get; set; }
-    public string mime { get; set; }
+    public string? mime { get; set; }
     public string thumb { get; set; }
     public string path { get; set; }
     public long postId { get; set; }

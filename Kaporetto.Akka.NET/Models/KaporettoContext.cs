@@ -36,4 +36,9 @@ public partial class KaporettoContext : DbContext
     }
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
+    // protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) //scommentare solo per migration!
+    // {
+    //     optionsBuilder.UseNpgsql("connectionstringhere");
+    // }
+
 }
