@@ -54,7 +54,7 @@ public class DbActor : ReceiveActor
             });
             dbContext.Posts.Add(post);
             dbContext.SaveChanges();
-            Log.Logger.Information($"[{DateTime.Now.ToString()}] Saved and acked post no. {post.postId}");
+            Logger.Information("Saved and acked post no. {postId}", post.postId);
             // dbContext.ChangeTracker.Clear();
         }
     }

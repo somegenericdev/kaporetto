@@ -50,7 +50,7 @@ public class ThreadScraperActor : ReceiveActor
         ThreadNo = message.Split(";")[0];
         BoardAlias = message.Split(";")[1];
         
-        Logger.Information($"Scraping thread no. {ThreadNo} on board {BoardAlias}");
+        Logger.Information("Scraping thread no. {ThreadNo} on board {BoardAlias}",ThreadNo, BoardAlias);
 
         var baseUrl = GetBaseUrl(BoardAlias);
         var lastFetchedPath = GetLastFetchedPath(ThreadNo, BoardAlias);

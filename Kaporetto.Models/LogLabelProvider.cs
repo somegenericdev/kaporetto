@@ -13,7 +13,7 @@ public class LogLabelProvider : ILogLabelProvider
         };
     }
 
-    private string AppName { get; set; }
+    private string AppName;
     public LogLabelProvider(string appName)
     {
         AppName = appName;
